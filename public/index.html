@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Chat App — Backend</title>
+    <style>
+        :root {
+            --accent: #2563eb;
+            --muted: #666;
+            --card: #fff;
+            --bg: #f3f4f6;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            background: var(--bg);
+            color: #111;
+        }
+
+        .wrap {
+            max-width: 900px;
+            margin: 48px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(16, 24, 40, .06);
+            padding: 22px;
+        }
+
+        h1 {
+            margin: 0 0 6px;
+            font-size: 22px;
+            color: var(--accent);
+        }
+
+        p.lead {
+            margin: 0 0 18px;
+            color: var(--muted);
+        }
+
+        .meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 12px 0 18px;
+        }
+
+        .meta .item {
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #0f172a;
+            font-size: 13px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        a.btn {
+            text-decoration: none;
+            background: var(--accent);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        a.btn.ghost {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid #dbeafe;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #e6eef8;
+            padding: 12px;
+            border-radius: 8px;
+            overflow: auto;
+            font-size: 13px;
+        }
+
+        footer {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .small {
+            font-size: 13px;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="card">
+            <h1>Chat App — Backend</h1>
+            <p class="lead">This server provides REST endpoints and real-time messaging (Socket.IO) for a simple chat
+                application intended to be used with a Flutter frontend.</p>
+
+            <div class="meta">
+                <div class="item">Auth: <code>/api/auth</code></div>
+                <div class="item">Users: <code>/api/users</code></div>
+                <div class="item">Messages: <code>/api/messages</code></div>
+                <div class="item">Socket.IO: <code>auth via token (auth: { token })</code></div>
+            </div>
+
+            <p class="small">Quick curl examples (replace <em>BASE</em> with this server):</p>
+            <pre>
+# Login
+curl -X POST <BASE>/api/auth/login -H "Content-Type: application/json" -d '{"email":"alice@example.com","password":"12345678"}'
+
+# Get users (authorized)
+curl -H "Authorization: Bearer &lt;TOKEN&gt;" <BASE>/api/users
+      </pre>
+
+            <div class="actions">
+                <a class="btn" href="/api/auth/login"
+                    onclick="alert('Use POST /api/auth/login with JSON body. This link is a placeholder.'); return false;">How
+                    to login (POST)</a>
+                <a class="btn ghost" href="/api/docs"
+                    onclick="alert('No docs file. See README in repo.'); return false;">API docs (repo)</a>
+            </div>
+
+            <hr style="margin:18px 0">
+
+            <h3>Socket.io test (browser)</h3>
+            <p class="small">If you have a token, you can open your browser console and run the snippet below to connect
+                and listen for events.</p>
+            <pre id="snippet">
+// open console and paste:
+// replace BASE and TOKEN
+const BASE = location.origin;
+const TOKEN = 'PASTE_TOKEN_HERE';
+const socket = io(BASE, { transports: ['websocket'], auth: { token: TOKEN } });
+socket.on('connect', ()=>console.log('connected', socket.id));
+socket.on('connect_error', (err)=>console.error('connect_error', err));
+socket.on('private_message', (d)=>console.log('private_message', d));
+socket.on('server_test', (d)=>console.log('server_test', d));
+      </pre>
+
+            <footer>
+                <div>Server status: <strong id="status">checking…</strong></div>
+                <div class="small">This page is static and served by the backend. Remove debug pages before production.
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
+    <script>
+        // try a lightweight health check to show server is reachable and DB status (if you add one later)
+        (async () => {
+            try {
+                const r = await fetch('/', { method: 'GET', cache: 'no-cache' });
+                if (r.ok) {
+                    document.getElementById('status').textContent = 'OK';
+                } else {
+                    document.getElementById('status').textContent = 'Error';
+                }
+            } catch (e) {
+                document.getElementById('status').textContent = 'Unavailable';
+            }
+        })();
+    </script>
+</body>
+
+</html>

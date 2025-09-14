@@ -8,6 +8,10 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const messageRoutes = require("./routes/messages");
 const { initSocket, getIO } = require("./socket");
+const path = require("path");
+
+// serve static `public` folder (index.html will be served at '/')
+app.use(express.static(path.join(__dirname, "..", "public")));
 
 const app = express();
 const server = http.createServer(app);
@@ -24,8 +28,16 @@ app.use(
 );
 app.use(express.json());
 
-// health
-app.get("/", (req, res) => res.json({ status: "ok" }));
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
+// NOTE: Do NOT keep app.get('/', ...) after express.static, or static file will be overridden.
+// If you must have a catch-all for SPA, use the following:
+app.get("*", (req, res, next) => {
+  // if request is for an API route, pass through
+  if (req.path.startsWith("/api") || req.path.startsWith("/socket.io"))
+    return next();
+  res.sendFile(path.join(__dirname, "..", "public", "index.html"));
+});
 
 // routes
 app.use("/api/auth", authRoutes);
@@ -58,6 +70,3 @@ initSocket(server);
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-
-
