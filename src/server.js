@@ -11,10 +11,10 @@ const { initSocket, getIO } = require("./socket");
 const path = require("path");
 
 // serve static `public` folder (index.html will be served at '/')
-app.use(express.static(path.join(__dirname, "..", "public")));
 
 const app = express();
 const server = http.createServer(app);
+app.use(express.static(path.join(__dirname, "..", "public")));
 
 // connect DB
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/chatapp";
