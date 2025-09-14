@@ -8,12 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #0b1220;
-            --muted: #94a3b8;
-            --accent: #60a5fa;
-            --glass: rgba(255, 255, 255, 0.03);
-            --white: #e6eef8;
+            --bg: #f5f7fb;
+            --panel: #ffffff;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --code-bg: #0f172a;
+            --code-text: #e6eef8;
         }
 
         html,
@@ -24,8 +24,8 @@
         }
 
         body {
-            background: linear-gradient(180deg, #071022 0%, #071a2b 100%);
-            color: var(--white);
+            background: linear-gradient(180deg, #eef2f7 0%, #f8fafc 100%);
+            color: #0f172a;
             padding: 28px;
         }
 
@@ -35,10 +35,10 @@
         }
 
         .card {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
-            border-radius: 14px;
+            background: var(--panel);
+            border-radius: 12px;
             padding: 22px;
-            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+            box-shadow: 0 6px 18px rgba(16, 24, 40, .06);
         }
 
         h1 {
@@ -66,28 +66,12 @@
         .section {
             margin-top: 18px;
             padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        pre,
-        code {
-            background: #031024;
-            border-radius: 8px;
-            padding: 10px;
-            color: var(--white);
-            font-size: 13px;
-            overflow: auto;
-        }
-
-        pre.example {
-            max-height: 260px;
+            border-top: 1px solid rgba(15, 23, 42, 0.04);
         }
 
         .endpoint {
-            background: linear-gradient(90deg, rgba(96, 165, 250, 0.08), rgba(96, 165, 250, 0.02));
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 14px;
+            padding: 8px 0;
         }
 
         .method {
@@ -96,16 +80,22 @@
             border-radius: 6px;
             font-weight: 700;
             margin-right: 8px;
+            font-size: 13px;
         }
 
         .GET {
-            background: #145;
-            color: #b6f0d6;
+            background: #d1fae5;
+            color: #065f46;
         }
 
         .POST {
-            background: #124;
-            color: #bfe7ff;
+            background: #dbeafe;
+            color: #075985;
+        }
+
+        .small {
+            font-size: 13px;
+            color: var(--muted);
         }
 
         .notes {
@@ -114,13 +104,18 @@
             margin-top: 8px;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 6px 8px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.03);
+        pre,
+        code {
+            background: var(--code-bg);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--code-text);
             font-size: 13px;
-            margin-right: 8px;
+            overflow: auto;
+        }
+
+        pre.example {
+            max-height: 320px;
         }
 
         table {
@@ -132,10 +127,10 @@
         th,
         td {
             padding: 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.04);
             text-align: left;
             font-size: 13px;
-            color: var(--white);
+            color: #0f172a;
         }
 
         th {
@@ -144,29 +139,51 @@
         }
 
         footer {
-            margin-top: 22px;
+            margin-top: 18px;
             color: var(--muted);
             font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 8px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            font-size: 13px;
+            margin-right: 8px;
+            color: #0f172a;
         }
 
         .copy-btn {
             display: inline-block;
             margin-left: 8px;
             background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(15, 23, 42, 0.04);
             padding: 6px 8px;
             border-radius: 6px;
             color: var(--accent);
             cursor: pointer;
-        }
-
-        .small {
             font-size: 13px;
-            color: var(--muted);
         }
 
-        .danger {
-            color: #ff9b9b
+        .muted-block {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .inline-code {
+            background: #f1f5f9;
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        /* responsive tweaks */
+        @media (max-width:800px) {
+            .row {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -175,13 +192,13 @@
     <div class="container">
         <div class="card">
             <h1>Chat App Backend — API Documentation</h1>
-            <p class="lead">REST + Socket.IO endpoints for the Flutter chat application. Replace
-                <code>&lt;BASE&gt;</code> with your server base URL (e.g.
-                <code>https://chat-app-backend-with-socket-io.onrender.com</code>).
-            </p>
+            <p class="lead">REST + Socket.IO endpoints for the Flutter chat application. Replace <code
+                    class="inline-code">&lt;BASE&gt;</code> with your server base URL (for example: <code
+                    class="inline-code">https://chat-app-backend-with-socket-io.onrender.com</code>).</p>
 
             <div class="row">
                 <div class="col">
+
                     <div class="section">
                         <h2>Authentication</h2>
 
@@ -194,10 +211,11 @@
   "email": "alice@example.com",
   "password": "password123"
 }
+
 Response 200
 {
-  "token": "<JWT_TOKEN>",
-  "user": { "id": "<userId>", "name": "Alice", "email": "alice@example.com", "avatar": null }
+  "token": "&lt;JWT_TOKEN&gt;",
+  "user": { "id": "&lt;userId&gt;", "name": "Alice", "email":"alice@example.com" }
 }</pre>
                         </div>
 
@@ -209,16 +227,17 @@ Response 200
   "email": "alice@example.com",
   "password": "password123"
 }
+
 Response 200
 {
-  "token": "<JWT_TOKEN>",
-  "user": { "id": "<userId>", "name": "Alice", "email": "alice@example.com" }
+  "token": "&lt;JWT_TOKEN&gt;",
+  "user": { "id": "&lt;userId&gt;", "name": "Alice", "email":"alice@example.com" }
 }</pre>
                         </div>
 
-                        <p class="notes">Use the returned <code>token</code> in the
-                            <code>Authorization: Bearer &lt;token&gt;</code> header for protected endpoints and as
-                            Socket.IO handshake auth: <code>auth: { token }</code>.
+                        <p class="notes">Use the returned <code class="inline-code">token</code> in the <code
+                                class="inline-code">Authorization: Bearer &lt;token&gt;</code> header for protected
+                            endpoints and as Socket.IO handshake auth: <code class="inline-code">auth: { token }</code>.
                         </p>
                     </div>
 
@@ -227,19 +246,20 @@ Response 200
 
                         <div class="endpoint">
                             <span class="method GET">GET</span> <strong>/api/users/me</strong>
-                            <div class="small">Get current authenticated user</div>
+                            <div class="small">Get the current authenticated user</div>
                             <pre class="example">Headers
 Authorization: Bearer &lt;TOKEN&gt;
 
 Response 200
 {
-  "user": { "id":"<id>", "name":"Alice", "email":"alice@example.com", "online": true, ... }
+  "user": { "id":"&lt;id&gt;", "name":"Alice", "email":"alice@example.com", "online": true }
 }</pre>
                         </div>
 
                         <div class="endpoint">
                             <span class="method GET">GET</span> <strong>/api/users</strong>
-                            <div class="small">List users except the logged-in user (supports pagination & search)</div>
+                            <div class="small">List users (other than the logged-in user). Supports pagination and
+                                search via query params.</div>
                             <pre class="example">Query params
 ?q=&limit=20&page=1
 
@@ -249,7 +269,7 @@ Authorization: Bearer &lt;TOKEN&gt;
 Response 200
 {
   "users": [
-    { "_id":"<bob_id>", "name":"Bob", "email":"bob@example.com", "online": false }
+    { "_id":"&lt;bob_id&gt;", "name":"Bob", "email":"bob@example.com", "online": false }
   ],
   "meta": { "total": 1, "page": 1, "limit": 20, "pages": 1 }
 }</pre>
@@ -262,23 +282,23 @@ Response 200
 
                         <div class="endpoint">
                             <span class="method POST">POST</span> <strong>/api/messages</strong>
-                            <div class="small">Send a message (REST) — server saves and emits to recipient if online
-                            </div>
+                            <div class="small">Send a message (REST). Server saves message and emits to recipient if
+                                online.</div>
                             <pre class="example">Headers
 Authorization: Bearer &lt;TOKEN&gt;
 
 Body JSON
 {
-  "to": "<recipient_user_id>",
+  "to": "&lt;recipient_user_id&gt;",
   "text": "Hello Bob!"
 }
 
 Response 200
 {
   "message": {
-    "_id": "<messageId>",
-    "from": "<senderId>",
-    "to": "<recipientId>",
+    "_id": "&lt;messageId&gt;",
+    "from": "&lt;senderId&gt;",
+    "to": "&lt;recipientId&gt;",
     "text": "Hello Bob!",
     "createdAt": "2025-09-14T..."
   }
@@ -287,8 +307,9 @@ Response 200
 
                         <div class="endpoint">
                             <span class="method GET">GET</span> <strong>/api/messages/conversation/:userId</strong>
-                            <div class="small">Get conversation with a user. Supports pagination via <code>limit</code>
-                                and <code>before</code> (ISO timestamp). Returns messages ordered oldest → newest.</div>
+                            <div class="small">Get conversation with a user. Supports pagination via <code
+                                    class="inline-code">limit</code> and <code class="inline-code">before</code> (ISO
+                                timestamp). Returns messages ordered oldest → newest.</div>
                             <pre class="example">Example
 GET /api/messages/conversation/68c6bbd86b1d1098da88a585?limit=20
 Headers: Authorization: Bearer &lt;TOKEN&gt;
@@ -296,7 +317,7 @@ Headers: Authorization: Bearer &lt;TOKEN&gt;
 Response 200
 {
   "messages": [
-    { "_id":"<id>", "from":{ "_id":"...", "name":"Alice" }, "to":{...}, "text":"...", "createdAt":"..." }
+    { "_id":"&lt;id&gt;", "from":{ "_id":"...", "name":"Alice" }, "to":{...}, "text":"...", "createdAt":"..." }
   ]
 }
 
@@ -305,24 +326,22 @@ GET /api/messages/conversation/:userId?limit=20&before=2025-09-14T12:34:56.000Z
 </pre>
                         </div>
 
-                        <p class="notes">UI pattern: request latest page first (no <code>before</code>); on scroll up
-                            use earliest message <code>createdAt</code> as <code>before</code> to fetch older messages
-                            (prepend to list).</p>
+                        <p class="notes">UI pattern: request latest page first (no <code
+                                class="inline-code">before</code>); on scroll up use the earliest message's <code
+                                class="inline-code">createdAt</code> as <code class="inline-code">before</code> to fetch
+                            older messages and prepend them.</p>
 
                     </div>
-
                 </div>
 
                 <div class="col">
                     <div class="section">
                         <h2>Socket.IO (Realtime)</h2>
 
-                        <p class="small">Connect using Socket.IO client and pass the token in the handshake
-                            <code>auth</code> object. Example (JS):
-                        </p>
-                        <pre class="example">
-// Browser or Node (socket.io-client)
-const socket = io('https://your-base-url', {
+                        <p class="small">Connect using a Socket.IO client and pass the token in the handshake <code
+                                class="inline-code">auth</code> object. Example (JS):</p>
+                        <pre class="example">// Browser or Node (socket.io-client)
+const socket = io('&lt;BASE&gt;', {
   transports: ['websocket'],
   auth: { token: 'YOUR_JWT_TOKEN' }
 });
@@ -330,10 +349,9 @@ const socket = io('https://your-base-url', {
 socket.on('connect', () => console.log('connected', socket.id));
 socket.on('connect_error', (err) => console.error('connect_error', err));
 socket.on('private_message', (data) => console.log('private_message', data));
-socket.on('user_online', (d) => console.log('user_online', d));
-          </pre>
+socket.on('user_online', (d) => console.log('user_online', d));</pre>
 
-                        <h3>Events (emit / listen)</h3>
+                        <h3 class="small">Events (emit / listen)</h3>
                         <table>
                             <tr>
                                 <th>Event</th>
@@ -345,7 +363,7 @@ socket.on('user_online', (d) => console.log('user_online', d));
                                 <td><strong>private_message</strong></td>
                                 <td>client → server</td>
                                 <td>
-                                    <pre>{ "to": "<userId>", "text": "hi" }</pre>
+                                    <pre>{ "to": "&lt;userId&gt;", "text": "hi" }</pre>
                                 </td>
                                 <td>Server saves message and emits to recipient & sender rooms. Accepts ack callback.
                                 </td>
@@ -362,7 +380,7 @@ socket.on('user_online', (d) => console.log('user_online', d));
                                 <td><strong>typing</strong></td>
                                 <td>client → server</td>
                                 <td>
-                                    <pre>{ "to":"<userId>", "typing": true }</pre>
+                                    <pre>{ "to":"&lt;userId&gt;", "typing": true }</pre>
                                 </td>
                                 <td>Server forwards to target user.</td>
                             </tr>
@@ -370,7 +388,7 @@ socket.on('user_online', (d) => console.log('user_online', d));
                                 <td><strong>user_online</strong></td>
                                 <td>server → client</td>
                                 <td>
-                                    <pre>{ "userId":"<id>", "online": true }</pre>
+                                    <pre>{ "userId":"&lt;id&gt;", "online": true }</pre>
                                 </td>
                                 <td>Broadcast when user goes online/offline.</td>
                             </tr>
@@ -378,21 +396,20 @@ socket.on('user_online', (d) => console.log('user_online', d));
 
                         <h3 class="small">Socket auth notes</h3>
                         <ul class="small">
-                            <li>Server verifies JWT using <code>JWT_SECRET</code>. Use token returned from same server's
-                                <code>/api/auth/login</code>.
-                            </li>
-                            <li>If you get <code>connect_error Authentication error</code>, re-login on the server and
-                                use the returned token.</li>
-                            <li>For Flutter use <code>socket_io_client</code> and set auth via
-                                <code>OptionBuilder().setAuth({'token': token})</code>.
-                            </li>
+                            <li>Server verifies JWT using <code class="inline-code">JWT_SECRET</code>. Use token
+                                returned by the same server's <code class="inline-code">/api/auth/login</code>.</li>
+                            <li>If you get <code class="inline-code">connect_error Authentication error</code>, re-login
+                                and use a fresh token from the deployed server.</li>
+                            <li>For Flutter use <code class="inline-code">socket_io_client</code> and set auth via <code
+                                    class="inline-code">OptionBuilder().setAuth({'token': token})</code>.</li>
                         </ul>
                     </div>
 
                     <div class="section">
                         <h2>Schemas</h2>
+
                         <p class="small">Message document</p>
-                        <pre>{
+                        <pre class="example">{
   "_id": "68c6d11d7fb975b1ed333d2f",
   "from": "68c6bbd86b1d1098da88a585",
   "to": "68c6bbd86b1d1098da88a585",
@@ -403,7 +420,7 @@ socket.on('user_online', (d) => console.log('user_online', d));
 }</pre>
 
                         <p class="small">User document</p>
-                        <pre>{
+                        <pre class="example">{
   "_id": "68c6bbd86b1d1098da88a585",
   "name": "Alice",
   "email": "alice@example.com",
@@ -443,8 +460,10 @@ socket.on('user_online', (d) => console.log('user_online', d));
                                 <td>Server error</td>
                             </tr>
                         </table>
-                        <p class="small notes">Socket errors may appear as <code>connect_error</code> events with text
-                            like <code>Authentication error</code> or <code>jwt expired</code>.</p>
+                        <p class="small muted-block">Socket errors may appear as <code
+                                class="inline-code">connect_error</code> events with messages like <code
+                                class="inline-code">Authentication error</code> or <code
+                                class="inline-code">jwt expired</code>.</p>
                     </div>
 
                     <div class="section">
@@ -469,17 +488,17 @@ socket.on('user_online', (d) => console.log('user_online', d));
                         <pre class="example">const io = require('socket.io-client');
 const socket = io('&lt;BASE&gt;', { transports:['websocket'], auth: { token: '&lt;TOKEN&gt;' } });
 socket.on('connect', () => console.log('connected', socket.id));</pre>
-
                     </div>
 
                     <div class="section">
                         <h2>Deployment & env</h2>
                         <p class="small">Required environment variables (Render / production)</p>
                         <ul class="small">
-                            <li><code>MONGO_URI</code> — MongoDB connection string (Atlas)</li>
-                            <li><code>JWT_SECRET</code> — secret used to sign/verify JWTs</li>
-                            <li><code>FRONTEND_ORIGIN</code> — allowed CORS origin (or <code>*</code> for testing)</li>
-                            <li><code>NODE_ENV</code> — production</li>
+                            <li><code class="inline-code">MONGO_URI</code> — MongoDB connection string (Atlas)</li>
+                            <li><code class="inline-code">JWT_SECRET</code> — secret used to sign/verify JWTs</li>
+                            <li><code class="inline-code">FRONTEND_ORIGIN</code> — allowed CORS origin (or <code
+                                    class="inline-code">*</code> for testing)</li>
+                            <li><code class="inline-code">NODE_ENV</code> — production</li>
                         </ul>
                         <p class="small">Render: set env vars in the Render dashboard, push to GitHub, Render
                             auto-deploys. Socket.IO works on Render (wss/https).</p>
@@ -493,29 +512,34 @@ socket.on('connect', () => console.log('connected', socket.id));</pre>
                 <ul class="small">
                     <li>After login, client should immediately open Socket.IO (auth: { token }). That is what marks the
                         user online.</li>
-                    <li>Use rooms named by <code>userId</code> (server joins sockets to <code>userId</code>) and emit
-                        with <code>io.to(userId).emit(...)</code> so multi-device works.</li>
-                    <li>Always dedupe messages in the client by <code>_id</code> because server may emit the same
-                        message to multiple rooms.</li>
-                    <li>For scaling across instances add a Redis adapter (<code>@socket.io/redis-adapter</code>).</li>
+                    <li>Use rooms named by <code class="inline-code">userId</code> (server joins sockets to <code
+                            class="inline-code">userId</code>) and emit with <code
+                            class="inline-code">io.to(userId).emit(...)</code> so multi-device works.</li>
+                    <li>Always dedupe messages in the client by <code class="inline-code">_id</code> because server may
+                        emit the same message to multiple rooms.</li>
+                    <li>For scaling across instances add a Redis adapter (<code
+                            class="inline-code">@socket.io/redis-adapter</code>).</li>
                 </ul>
             </div>
 
             <footer>
-                <div class="small">This documentation page is served by the backend. Replace &lt;BASE&gt; with your base
-                    URL. Remove this page or restrict access before going public if needed.</div>
+                <div class="small">This documentation page is served by the backend. Replace <code
+                        class="inline-code">&lt;BASE&gt;</code> with your base URL. Remove or protect this page before
+                    exposing to the public if needed.</div>
             </footer>
         </div>
     </div>
 
     <!-- small JS helper to copy examples -->
     <script>
-        // optional: click-to-copy for pre blocks (works if you want)
+        // click-to-copy for examples: click a pre.example to copy its text to clipboard
         document.querySelectorAll('pre.example').forEach(pre => {
+            pre.style.cursor = 'copy';
             pre.addEventListener('click', () => {
-                const t = pre.innerText;
-                navigator.clipboard?.writeText(t).then(() => {
-                    pre.style.outline = '2px solid rgba(96,165,250,0.2)';
+                const text = pre.innerText;
+                if (!navigator.clipboard) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    pre.style.outline = '2px solid rgba(37,99,235,0.12)';
                     setTimeout(() => pre.style.outline = '', 600);
                 }).catch(() => { });
             });
