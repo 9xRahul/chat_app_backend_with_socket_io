@@ -1,16 +1,17 @@
+// src/socket.js
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
 const Message = require("./models/Message");
 
-let io;
+let io = null;
 
-/**
- * Initialize socket.io
- * @param httpServer - node http server (created from http.createServer(app))
- * @param options - optional socket.io options
- */
 const initSocket = (httpServer, options = {}) => {
+  if (io) {
+    console.log("Socket.io already initialized");
+    return io;
+  }
+
   io = new Server(httpServer, {
     cors: {
       origin: process.env.FRONTEND_ORIGIN || "*",
@@ -19,36 +20,59 @@ const initSocket = (httpServer, options = {}) => {
     ...options,
   });
 
-  // middleware to authenticate socket connections using JWT
+  console.log("Socket.io initialized");
+
+  // auth middleware
   io.use(async (socket, next) => {
     try {
-      // token can be passed via auth or query
       const token =
         socket.handshake.auth?.token || socket.handshake.query?.token;
-      if (!token) return next(new Error("Authentication error: No token"));
+      console.log(">>> socket handshake token present?", !!token);
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id);
-      if (!user) return next(new Error("Authentication error: User not found"));
+      if (!token) {
+        console.error(
+          "Socket auth: no token provided in handshake (auth or query)."
+        );
+        return next(new Error("Authentication error: No token"));
+      }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (jwtErr) {
+        console.error(
+          "Socket auth jwt verify error:",
+          jwtErr.message || jwtErr
+        );
+        return next(
+          new Error("Authentication error: " + (jwtErr.message || "jwt error"))
+        );
+      }
+
+      const user = await User.findById(decoded.id).select("-password");
+      if (!user) {
+        console.error("Socket auth: user not found for id:", decoded.id);
+        return next(new Error("Authentication error: User not found"));
+      }
 
       socket.user = user;
       next();
     } catch (err) {
-      console.error("Socket auth error", err.message);
-      next(new Error("Authentication error"));
+      console.error("Socket auth unexpected error:", err);
+      next(new Error("Authentication error: unexpected"));
     }
   });
 
   io.on("connection", (socket) => {
     const user = socket.user;
-    if (!user) {
-      socket.disconnect(true);
-      return;
-    }
+    console.log(
+      "User connected via socket:",
+      user?._id?.toString(),
+      "socketId:",
+      socket.id
+    );
 
-    console.log("Socket connected:", user._id, "socketId:", socket.id);
-
-    // mark user online and save socket id
+    // mark user online
     User.findByIdAndUpdate(
       user._id,
       { online: true, socketId: socket.id },
@@ -56,18 +80,12 @@ const initSocket = (httpServer, options = {}) => {
     )
       .select("-password")
       .then((u) => {
-        // notify others (optional) that user is online
         io.emit("user_online", { userId: u._id, online: true });
       })
       .catch(console.error);
 
-    // join personal room by user id so we can emit privately by room
     socket.join(user._id.toString());
 
-    /**
-     * private_message handler
-     * payload: { to: recipientUserId, text: '...' }
-     */
     socket.on("private_message", async (payload, ack) => {
       try {
         const { to, text } = payload || {};
@@ -77,29 +95,22 @@ const initSocket = (httpServer, options = {}) => {
           return;
         }
 
-        // save message
         const message = new Message({ from: user._id, to, text });
         await message.save();
 
-        // populate minimal fields for emit
         const emitMessage = {
           _id: message._id,
           from: user._id,
           to,
           text,
           createdAt: message.createdAt,
-          updatedAt: message.updatedAt,
         };
 
-        // emit to recipient room
         io.to(to.toString()).emit("private_message", { message: emitMessage });
-
-        // also emit to sender's own room (so other devices of sender get it)
         io.to(user._id.toString()).emit("private_message", {
           message: emitMessage,
         });
 
-        // ack to sender
         if (typeof ack === "function")
           ack({ success: true, message: emitMessage });
       } catch (err) {
@@ -109,7 +120,6 @@ const initSocket = (httpServer, options = {}) => {
       }
     });
 
-    // typing indicator example: { to: recipientId, typing: true/false }
     socket.on("typing", (payload) => {
       try {
         const { to, typing } = payload || {};
@@ -123,26 +133,30 @@ const initSocket = (httpServer, options = {}) => {
       }
     });
 
-    // handle disconnect
     socket.on("disconnect", async () => {
-      console.log("Socket disconnected:", user._id, "socketId:", socket.id);
+      console.log(
+        "Socket disconnected for user:",
+        user?._id?.toString(),
+        "socketId:",
+        socket.id
+      );
       try {
-        // only clear if this socket id matches saved one (in case user has multiple devices)
         const dbUser = await User.findById(user._id);
-        if (dbUser) {
-          // if socketId matches, set offline, else don't change (user has other device)
-          if (dbUser.socketId === socket.id) {
-            dbUser.online = false;
-            dbUser.socketId = null;
-            await dbUser.save();
-            io.emit("user_online", { userId: dbUser._id, online: false });
-          }
+        if (dbUser && dbUser.socketId === socket.id) {
+          dbUser.online = false;
+          dbUser.socketId = null;
+          await dbUser.save();
+          io.emit("user_online", { userId: dbUser._id, online: false });
         }
       } catch (err) {
         console.error("disconnect handling error", err);
       }
     });
-  }); // io.on('connection')
+  });
+
+  return io;
 };
 
-module.exports = { initSocket };
+const getIO = () => io;
+
+module.exports = { initSocket, getIO };
