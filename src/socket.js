@@ -18,6 +18,8 @@ const initSocket = (httpServer, options = {}) => {
       methods: ["GET", "POST"],
     },
     ...options,
+    pingInterval: 25000, // default 25000 ms
+    pingTimeout: 60000, // default 5000 ms; increase so proxies don't drop; tune carefully
   });
 
   console.log("Socket.io initialized");

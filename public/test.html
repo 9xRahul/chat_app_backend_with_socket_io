@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Server Check — Simple HTTP Tester</title>
+    <style>
+        body {
+            font-family: Inter, system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+            background: #f6f8fb;
+            color: #111;
+            padding: 18px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 6px 18px rgba(50, 50, 93, 0.08);
+            max-width: 1000px;
+            margin: 12px auto;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        input[type="text"],
+        textarea,
+        select,
+        input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        button {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 0;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #e6eef8;
+            padding: 12px;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 360px;
+        }
+
+        .meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            background: #eef2ff;
+            color: #1e3a8a;
+            padding: 6px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .warn {
+            background: #fff7ed;
+            color: #92400e;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        small {
+            color: #6b7280;
+        }
+
+        .flex-end {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .half {
+            width: 48%;
+        }
+
+        .copy-btn {
+            background: #111827;
+            padding: 6px 8px;
+            border-radius: 6px;
+            color: #fff;
+            border: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Server Check — HTTP Tester</h2>
+        <small>Paste the server URL you mentioned in the other chat (or type it). If browser blocks due to CORS, use
+            curl or run a simple proxy.</small>
+
+        <label>Server URL</label>
+        <input id="url" type="text" placeholder="https://example.com/health or http://192.168.0.10:3000/api/ping" />
+
+        <div class="row" style="margin-top:6px;">
+            <div class="col">
+                <label>Method</label>
+                <select id="method">
+                    <option>GET</option>
+                    <option>POST</option>
+                    <option>PUT</option>
+                    <option>DELETE</option>
+                    <option>HEAD</option>
+                    <option>OPTIONS</option>
+                </select>
+            </div>
+            <div style="width:140px;">
+                <label>Timeout (ms)</label>
+                <input id="timeout" type="number" value="10000" />
+            </div>
+        </div>
+
+        <label>Headers (JSON format)</label>
+        <textarea id="headers" placeholder='{"Authorization":"Bearer TOKEN","Accept":"application/json"}'></textarea>
+
+        <label>Body (for POST/PUT) — JSON or text</label>
+        <textarea id="body" placeholder='{"ping":"hello"}'></textarea>
+
+        <div class="flex-end">
+            <button id="send">Send Request</button>
+            <button id="curl" class="copy-btn">Copy curl</button>
+        </div>
+
+        <div id="result" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card" id="output-card" style="max-width:1000px; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">Response</h3>
+            <div class="meta">
+                <div class="pill" id="status-pill">—</div>
+                <div class="pill" id="time-pill">—</div>
+                <div class="pill" id="size-pill">—</div>
+            </div>
+        </div>
+
+        <label>Response Headers</label>
+        <pre id="resp-headers">—</pre>
+
+        <label>Response Body (preview)</label>
+        <pre id="resp-body">—</pre>
+
+        <div style="display:flex; gap:8px; margin-top:8px;">
+            <button id="download-body" class="copy-btn">Download body</button>
+            <button id="pretty-json" class="copy-btn">Pretty JSON</button>
+        </div>
+
+        <div style="margin-top:10px;">
+            <div class="warn" id="cors-warning" style="display:none;">
+                Browser blocked the request due to CORS. <strong>Workarounds:</strong> use <code>curl</code> from your
+                terminal, enable CORS on server, or run a small proxy on your machine.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+
+        function parseJSONSafe(text) {
+            try { return JSON.parse(text); } catch (e) { return null; }
+        }
+
+        function makeCurl(url, method, headers, body) {
+            let cmd = ['curl', '-i', '-X', method];
+            for (const k in headers) {
+                cmd.push('-H', JSON.stringify(k + ': ' + headers[k]));
+            }
+            if (body) {
+                // escape single quotes
+                const b = typeof body === 'string' ? body : JSON.stringify(body);
+                cmd.push('-d', `'${b.replace(/'/g, "'\"'\"'")}'`);
+            }
+            cmd.push(url);
+            return cmd.join(' ');
+        }
+
+        $('send').addEventListener('click', async () => {
+            const url = $('url').value.trim();
+            if (!url) { alert('Enter server URL'); return; }
+            const method = $('method').value;
+            const timeout = parseInt($('timeout').value) || 10000;
+
+            // parse headers
+            let headers = {};
+            const rawHeaders = $('headers').value.trim();
+            if (rawHeaders) {
+                const maybe = parseJSONSafe(rawHeaders);
+                if (maybe && typeof maybe === 'object') headers = maybe;
+                else {
+                    // try parse as key: value per line
+                    rawHeaders.split(/[\r\n]+/).forEach(line => {
+                        const idx = line.indexOf(':');
+                        if (idx > 0) {
+                            const k = line.slice(0, idx).trim();
+                            const v = line.slice(idx + 1).trim();
+                            if (k) headers[k] = v;
+                        }
+                    });
+                }
+            }
+
+            const bodyRaw = $('body').value;
+            let bodyToSend = undefined;
+            if (method !== 'GET' && method !== 'HEAD' && bodyRaw) {
+                // try parse JSON
+                const j = parseJSONSafe(bodyRaw);
+                if (j) {
+                    bodyToSend = JSON.stringify(j);
+                    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+                } else {
+                    bodyToSend = bodyRaw;
+                }
+            }
+
+            $('output-card').style.display = 'block';
+            $('resp-headers').textContent = 'Waiting...';
+            $('resp-body').textContent = '';
+            $('status-pill').textContent = '⏳';
+            $('time-pill').textContent = '—';
+            $('size-pill').textContent = '—';
+            $('cors-warning').style.display = 'none';
+
+            // timeout via AbortController
+            const controller = new AbortController();
+            const t0 = performance.now();
+            const timer = setTimeout(() => controller.abort(), timeout);
+
+            try {
+                const resp = await fetch(url, {
+                    method,
+                    headers,
+                    body: bodyToSend,
+                    signal: controller.signal,
+                    redirect: 'follow'
+                });
+                clearTimeout(timer);
+                const t1 = performance.now();
+                const took = Math.round(t1 - t0);
+
+                // read body as text (some servers return empty body for HEAD)
+                let text;
+                try { text = await resp.text(); } catch (e) { text = '<unable to read body>'; }
+
+                // headers to object
+                const hdrs = {};
+                resp.headers.forEach((v, k) => hdrs[k] = v);
+
+                $('status-pill').textContent = `${resp.status} ${resp.statusText}`;
+                $('time-pill').textContent = `${took} ms`;
+                $('size-pill').textContent = text ? `${text.length} bytes` : '0 bytes';
+                $('resp-headers').textContent = JSON.stringify(hdrs, null, 2);
+                // show pretty JSON if possible, else raw text
+                try {
+                    const j = JSON.parse(text);
+                    $('resp-body').textContent = JSON.stringify(j, null, 2);
+                } catch {
+                    $('resp-body').textContent = text || '<no body>';
+                }
+            } catch (err) {
+                clearTimeout(timer);
+                const isAbort = err.name === 'AbortError';
+                $('status-pill').textContent = isAbort ? 'Timeout / Aborted' : 'Request Failed';
+                $('time-pill').textContent = '—';
+                $('resp-headers').textContent = (err && err.message) ? err.message : String(err);
+                // detect CORS by message content (not reliable across browsers)
+                if (err instanceof TypeError && (err.message === 'Failed to fetch' || err.message.includes('NetworkError'))) {
+                    $('cors-warning').style.display = 'block';
+                    $('resp-body').textContent = 'The browser failed to fetch the resource. Likely causes: network error, server unreachable, or CORS blocked the response.';
+                } else {
+                    $('resp-body').textContent = String(err);
+                }
+            }
+        });
+
+        $('curl').addEventListener('click', () => {
+            const url = $('url').value.trim();
+            if (!url) { alert('Enter URL to build curl'); return; }
+            const method = $('method').value;
+            let headers = parseJSONSafe($('headers').value.trim()) || {};
+            const bodyRaw = $('body').value.trim();
+            const curl = makeCurl(url, method, headers, bodyRaw);
+            navigator.clipboard?.writeText(curl).then(() => {
+                alert('curl copied to clipboard');
+            }, () => {
+                prompt('Copy this curl:', curl);
+            });
+        });
+
+        $('download-body').addEventListener('click', () => {
+            const content = $('resp-body').textContent || '';
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'response_body.txt';
+            document.body.appendChild(a); a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        });
+
+        $('pretty-json').addEventListener('click', () => {
+            const txt = $('resp-body').textContent;
+            try {
+                const j = JSON.parse(txt);
+                $('resp-body').textContent = JSON.stringify(j, null, 2);
+            } catch {
+                alert('Response is not valid JSON.');
+            }
+        });
+
+        // quick fill from clipboard if allowed (convenience)
+        (async function tryFillFromClipboard() {
+            if (!navigator.clipboard) return;
+            try {
+                const txt = await navigator.clipboard.readText();
+                if (txt && (txt.startsWith('http://') || txt.startsWith('https://'))) {
+                    // don't overwrite if user already typed
+                    if (!$('url').value.trim()) $('url').value = txt;
+                }
+            } catch (e) { /* ignore clipboard permission issues */ }
+        })();
+    </script>
+
+</body>
+
+</html>
